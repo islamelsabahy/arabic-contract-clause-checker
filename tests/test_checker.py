@@ -36,6 +36,34 @@ class NormalizeTests(unittest.TestCase):
         self.assertEqual(normalize("  a \t  b "), "a b")
 
 
+class InvisibleMarkTests(unittest.TestCase):
+    """Text pasted from Word or PDF carries bidi marks, zero-width characters and sometimes a BOM."""
+
+    def test_marks_are_removed(self):
+        self.assertEqual(normalize("لا\u200f \u200eيرد\ufeff"), "لا يرد")
+
+    def test_zero_width_space_separates_words(self):
+        self.assertEqual(normalize("فسخ\u200bالعقد"), "فسخ العقد")
+
+    def test_risk_is_found_through_bidi_marks(self):
+        r = analyze("لا\u200f يرد المبلغ المسدد. فسخ العقد بدون\u202b إنذار.", "sale")
+        self.assertTrue({"non_refundable", "termination_no_notice"} <= ids(r, "risk"))
+
+    def test_bom_is_ignored(self):
+        self.assertEqual(ids(analyze("\ufeff" + sample("sale_good.txt"))), set())
+
+
+class WebDataTests(unittest.TestCase):
+    """docs/rules.js, docs/samples.js and tests/vectors.json are generated; fail if they go stale."""
+
+    def test_generated_web_files_are_current(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("build_web_data", os.path.join(ROOT, "scripts", "build_web_data.py"))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        self.assertEqual(mod.stale(), [], "run: python scripts/build_web_data.py")
+
+
 class SaleTests(unittest.TestCase):
     def test_good_contract_has_no_findings(self):
         r = analyze(sample("sale_good.txt"), "sale")

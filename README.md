@@ -8,6 +8,10 @@
 
 > **Not legal advice / ليست استشارة قانونية.** This is a keyword checklist. It cannot understand context, validity, or Egyptian law specifics, and it will miss problems and raise false alarms. Use it to prepare questions for a lawyer, never instead of one. / هي قائمة فحص بالكلمات المفتاحية فقط؛ اعرض أي عقد على محامٍ مختص.
 
+## Try it in the browser / جرّبه من المتصفح
+
+**https://islamelsabahy.github.io/arabic-contract-clause-checker/** (needs GitHub Pages enabled on `/docs`). Same rules as the CLI, plus a PDF report; runs client-side so the contract is never uploaded. / نفس القواعد مع تقرير PDF، وبيشتغل في المتصفح من غير رفع العقد.
+
 ## Use / الاستخدام
 
 ```bash
@@ -45,8 +49,12 @@ All rules are in [`contractcheck/rules.py`](contractcheck/rules.py): plain Arabi
 ## Tests
 
 ```bash
-python -m unittest discover -s tests -v
+python -m unittest discover -s tests -v   # Python reference
+node tests/test_checker.js                # browser port must match it on tests/vectors.json
+python scripts/build_web_data.py          # regenerate docs/rules.js, docs/samples.js, tests/vectors.json
 ```
+
+Rules are edited only in `contractcheck/rules.py`; the browser gets them through the generated `docs/rules.js`. / القواعد بتتعدل في rules.py بس والمتصفح بياخدها من الملف المتولد.
 
 ## Roadmap
 

@@ -19,10 +19,15 @@ _TRANS = str.maketrans(
 )
 
 
+# Zero-width and bidi control marks that Word/PDF copy-paste leaves inside Arabic text (and the BOM).
+_INVISIBLE = re.compile("[\u200c-\u200f\u202a-\u202e\u2066-\u2069\ufeff]")
+_WS = re.compile("[ \\t\xa0\u200b]+")
+
+
 def normalize(text: str) -> str:
-    """Strip diacritics and tatweel, unify alef/ya/ta-marbuta forms and digits, lower-case Latin."""
-    text = _TASHKEEL.sub("", text).translate(_TRANS).lower()
-    return re.sub(r"[ \t ]+", " ", text).strip()
+    """Strip diacritics, tatweel and invisible bidi marks, unify alef/ya/ta-marbuta forms and digits, lower-case Latin."""
+    text = _INVISIBLE.sub("", _TASHKEEL.sub("", text)).translate(_TRANS).lower()
+    return _WS.sub(" ", text).strip()
 
 
 def _compile(pattern: str) -> "re.Pattern[str]":
@@ -82,6 +87,7 @@ def analyze(text: str, kind: str = "sale", max_excerpts: int = 3) -> Report:
     """Review contract text. ``kind`` is ``"sale"`` or ``"lease"``."""
     if kind not in ("sale", "lease"):
         raise ValueError("kind must be 'sale' or 'lease'")
+    text = text.replace("\ufeff", "")
     norm_all = normalize(text)
     sentences = _sentences(text)
     paragraphs = [(raw.strip(), normalize(raw)) for raw in text.split("\n") if raw.strip()]

@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arabic Contract Clause Checker</title>
+<meta name="description" content="First-pass checklist review of Arabic real-estate sale and lease contracts. Runs entirely in your browser.">
+<style>
+  :root { --bg:#f7f8fa; --card:#fff; --ink:#1b2430; --muted:#5b6675; --line:#d9dee6; --accent:#0b6bcb; --high:#c62828; --med:#a15c00; --low:#5b6675; --highbg:#fdecea; --medbg:#fff4e0; --lowbg:#eef1f5; --ok:#127a3d; --okbg:#e6f4ea; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#10151c; --card:#18202a; --ink:#e8edf3; --muted:#9aa7b6; --line:#2a3644; --accent:#58a6ff; --high:#ff8a80; --med:#ffb74d; --low:#9aa7b6; --highbg:#3a1a18; --medbg:#3a2a10; --lowbg:#222c38; --ok:#4cc38a; --okbg:#12301f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 system-ui, "Segoe UI", Tahoma, sans-serif; }
+  main { max-width:880px; margin:0 auto; padding:20px 16px 48px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+  h1 { font-size:1.4rem; margin:.2em 0; }
+  h2 { font-size:1.05rem; margin:0 0 8px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin:16px 0; }
+  .note { color:var(--muted); font-size:.85rem; }
+  .banner { border:1px solid var(--med); background:var(--medbg); border-radius:8px; padding:10px 12px; font-size:.9rem; }
+  textarea { width:100%; min-height:260px; font:15px/1.7 system-ui, "Segoe UI", Tahoma, sans-serif; padding:10px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--ink); resize:vertical; }
+  textarea.drag { outline:2px dashed var(--accent); }
+  input, select, button, label.btn { font:inherit; padding:8px 12px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--ink); min-height:40px; }
+  button, label.btn { cursor:pointer; background:var(--accent); color:#fff; border-color:var(--accent); display:inline-flex; align-items:center; }
+  button.secondary, label.btn.secondary { background:transparent; color:var(--accent); }
+  .bar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+  .seg { display:inline-flex; border:1px solid var(--accent); border-radius:6px; overflow:hidden; }
+  .seg button { border:0; border-radius:0; background:transparent; color:var(--accent); }
+  .seg button[aria-pressed=true] { background:var(--accent); color:#fff; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin:6px 0 12px; }
+  .stat { border:1px solid var(--line); border-radius:8px; padding:8px 12px; }
+  .stat b { display:block; font-size:1.4rem; direction:ltr; unicode-bidi:isolate; text-align:start; }
+  .stat small { color:var(--muted); }
+  .stat.high b { color:var(--high); } .stat.medium b { color:var(--med); } .stat.ok b { color:var(--ok); }
+  ul.findings { list-style:none; padding:0; margin:0; }
+  ul.findings > li { border:1px solid var(--line); border-inline-start-width:5px; border-radius:8px; padding:10px 12px; margin:10px 0; break-inside:avoid; }
+  li.high { border-inline-start-color:var(--high); } li.medium { border-inline-start-color:var(--med); } li.low { border-inline-start-color:var(--low); }
+  .tags { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:4px; }
+  .tag { font-size:.72rem; font-weight:700; border-radius:999px; padding:1px 9px; }
+  .tag.high { background:var(--highbg); color:var(--high); } .tag.medium { background:var(--medbg); color:var(--med); } .tag.low { background:var(--lowbg); color:var(--low); }
+  .tag.kind { background:var(--lowbg); color:var(--ink); }
+  .ftitle { font-weight:600; margin:0; }
+  blockquote { margin:6px 0; padding:4px 10px; border-inline-start:3px solid var(--line); color:var(--muted); font-size:.92rem; white-space:pre-wrap; }
+  .tip { margin:6px 0 0; font-size:.92rem; }
+  .tip::before { content:"→ "; color:var(--accent); }
+  .allgood { background:var(--okbg); color:var(--ok); border:1px solid var(--ok); border-radius:8px; padding:10px 14px; font-weight:600; }
+  details { margin-top:10px; } summary { cursor:pointer; color:var(--accent); }
+  details ul { margin:6px 0; padding-inline-start:22px; }
+  .meta { display:none; }
+  .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+  [hidden] { display:none !important; }
+  @media print {
+    @page { margin:14mm; }
+    :root { --bg:#fff; --card:#fff; --ink:#111; --muted:#444; --line:#bbb; --accent:#0b4f9c; }
+    body { background:#fff; font-size:11pt; }
+    main > *:not(#results):not(.printhead) { display:none !important; }
+    .printhead { display:block !important; }
+    .card { border:0; padding:0; margin:8px 0; }
+    .actions { display:none !important; }
+    .meta { display:block; color:#444; margin:0 0 8px; }
+    details { display:block; } details > summary { display:none; }
+    details[open] ul, details ul { display:block; }
+  }
+  .printhead { display:none; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1 id="t-title"></h1>
+    <button class="secondary" id="lang" type="button">English</button>
+  </header>
+  <p class="note" id="t-intro"></p>
+  <p class="banner" id="t-disc" role="note"></p>
+
+  <section class="card" aria-labelledby="t-in">
+    <h2 id="t-in"></h2>
+    <div class="bar" style="margin:0 0 10px">
+      <span class="seg" role="group" id="kindseg">
+        <button type="button" data-kind="sale" aria-pressed="true" id="k-sale"></button>
+        <button type="button" data-kind="lease" aria-pressed="false" id="k-lease"></button>
+      </span>
+      <label class="btn secondary" for="file" id="t-file"></label>
+      <input type="file" id="file" accept=".txt,text/plain" hidden>
+      <select id="sample" aria-label="sample"></select>
+    </div>
+    <textarea id="src" dir="auto" spellcheck="false" aria-labelledby="t-in"></textarea>
+    <div class="bar">
+      <button id="run" type="button"></button>
+      <input id="ref" type="text" maxlength="80" aria-label="reference" style="flex:1; min-width:180px">
+    </div>
+    <p class="note" id="t-privacy"></p>
+  </section>
+
+  <div class="printhead"><h1 id="p-title"></h1></div>
+  <section class="card" id="results" aria-live="polite" hidden>
+    <p class="meta" id="meta"></p>
+    <div class="stats" id="stats"></div>
+    <div id="body"></div>
+    <details id="found"><summary id="found-sum"></summary><ul id="found-list"></ul></details>
+    <p class="note" id="r-disc"></p>
+    <div class="actions">
+      <button id="pdf" type="button"></button>
+      <button class="secondary" id="copy" type="button"></button>
+    </div>
+  </section>
+
+  <p class="note" id="t-foot"></p>
+  <p class="note"><a href="https://github.com/islamelsabahy/arabic-contract-clause-checker">GitHub</a> · MIT</p>
+</main>
+<script src="rules.js"></script>
+<script src="samples.js"></script>
+<script src="checker.js"></script>
+<script>
+(function () {
+  var T = {
+    ar: { dir:"rtl", lang:"English", title:"فاحص بنود العقود العربية",
+      intro:"مراجعة أولية بقائمة فحص لعقود البيع والإيجار العقارية: بنود ناقصة وصياغات خطرة، مع اقتراح لتصحيح كل ملاحظة.",
+      disc:"مراجعة آلية أولية وليست استشارة قانونية. بتعتمد على مطابقة كلمات، فممكن تفوت حاجات أو تنبّه على حاجات سليمة. اعرض العقد على محامٍ مختص.",
+      input:"نص العقد", sale:"عقد بيع", lease:"عقد إيجار", file:"افتح ملف .txt…", sample:"جرّب مثال…", samples:{ sale_good:"بيع سليم", sale_risky:"بيع فيه مشاكل", lease_risky:"إيجار فيه مشاكل" },
+      ph:"الصق نص العقد هنا…", run:"افحص العقد", ref:"اسم أو رقم العقد (يظهر في تقرير PDF)",
+      privacy:"كل حاجة بتشتغل في المتصفح عندك. النص ما بيتبعتش ولا بيتخزن. لو العقد ملف Word أو PDF انسخ النص والصقه هنا.",
+      found:"بنود موجودة", findings:"ملاحظات", high:"عالي", medium:"متوسط", low:"منخفض", missing:"بند ناقص", risk:"صياغة خطرة",
+      none:"مفيش ملاحظات: كل البنود المتوقعة موجودة ومفيش صياغات خطرة.", more:"وغيرها", checked:"بنود متوقعة", present:"البنود الموجودة",
+      pdf:"تصدير تقرير PDF", copy:"انسخ التقرير", copied:"اتنسخ", empty:"الصق نص العقد الأول.",
+      kindName:{ sale:"بيع", lease:"إيجار" }, rtitle:"تقرير مراجعة عقد", date:"التاريخ", ctype:"النوع",
+      foot:"أمثلة العقود وهمية. القواعد في rules.py ويسهل إضافة قاعدة جديدة." },
+    en: { dir:"ltr", lang:"العربية", title:"Arabic Contract Clause Checker",
+      intro:"First-pass checklist review of Arabic real-estate sale and lease contracts: missing clauses and risky wording, each with a suggested fix.",
+      disc:"Automated first-pass review. Not legal advice. It matches keywords, so it can miss things or flag harmless wording. Have a qualified lawyer review the contract.",
+      input:"Contract text", sale:"Sale contract", lease:"Lease contract", file:"Open .txt file…", sample:"Try a sample…", samples:{ sale_good:"Sale, sound", sale_risky:"Sale, problems", lease_risky:"Lease, problems" },
+      ph:"Paste the contract text here…", run:"Review contract", ref:"Contract name or reference (shown on the PDF report)",
+      privacy:"Everything runs in your browser. The text is never uploaded or stored. For Word or PDF contracts, copy the text and paste it here.",
+      found:"Clauses found", findings:"Findings", high:"High", medium:"Medium", low:"Low", missing:"Missing clause", risk:"Risky wording",
+      none:"No findings: every expected clause is present and no risky wording was detected.", more:"more", checked:"expected clauses", present:"Clauses present",
+      pdf:"Export PDF report", copy:"Copy report", copied:"Copied", empty:"Paste the contract text first.",
+      kindName:{ sale:"Sale", lease:"Lease" }, rtitle:"Contract review report", date:"Date", ctype:"Type",
+      foot:"The sample contracts are fictional. Rules live in rules.py; adding one is a single entry." }
+  };
+  var lang = /^en/i.test(navigator.language || "") ? "en" : "ar";
+  var kind = "sale", last = null;
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+
+  function run() {
+    var L = T[lang], text = $("src").value;
+    if (!text.trim()) { last = null; $("results").hidden = true; $("src").focus(); return; }
+    var rep = ContractCheck.analyze(text, kind);
+    last = { rep: rep, kind: kind };
+    render();
+  }
+
+  function render() {
+    if (!last) return;
+    var L = T[lang], rep = last.rep, sev = { high: 0, medium: 0, low: 0 };
+    rep.findings.forEach(function (f) { sev[f.severity]++; });
+    $("results").hidden = false;
+    var refv = $("ref").value.trim();
+    $("meta").textContent = (refv ? refv + " · " : "") + L.ctype + ": " + L.kindName[rep.contract_kind] + " · " + L.date + ": " + new Date().toISOString().slice(0, 10);
+    $("p-title").textContent = L.rtitle;
+
+    var stats = $("stats"); stats.innerHTML = "";
+    [["ok", rep.clauses_found.length + "/" + rep.clauses_checked, L.found], ["high", sev.high, L.high], ["medium", sev.medium, L.medium], ["low", sev.low, L.low]].forEach(function (s) {
+      var d = el("div", "stat " + s[0]); d.appendChild(el("b", "", String(s[1]))); d.appendChild(el("small", "", s[2])); stats.appendChild(d);
+    });
+
+    var body = $("body"); body.innerHTML = "";
+    if (!rep.findings.length) body.appendChild(el("div", "allgood", L.none));
+    else {
+      var ul = el("ul", "findings");
+      rep.findings.forEach(function (f) {
+        var li = el("li", f.severity);
+        var tags = el("div", "tags"); tags.appendChild(el("span", "tag " + f.severity, L[f.severity])); tags.appendChild(el("span", "tag kind", f.kind === "missing" ? L.missing : L.risk));
+        li.appendChild(tags);
+        li.appendChild(el("p", "ftitle", lang === "ar" ? f.title_ar : f.title_en));
+        f.excerpts.forEach(function (x) { var q = el("blockquote", "", x); q.dir = "auto"; li.appendChild(q); });
+        if (f.count > f.excerpts.length) li.appendChild(el("p", "note", "+" + (f.count - f.excerpts.length) + " " + L.more));
+        li.appendChild(el("p", "tip", lang === "ar" ? f.tip_ar : f.tip_en));
+        ul.appendChild(li);
+      });
+      body.appendChild(ul);
+    }
+    var titles = ContractCheck.clauseTitles(rep.contract_kind, lang), fl = $("found-list"); fl.innerHTML = "";
+    rep.clauses_found.forEach(function (id) { fl.appendChild(el("li", "", titles[id])); });
+    $("found").hidden = !rep.clauses_found.length;
+    $("found-sum").textContent = L.present + " (" + rep.clauses_found.length + ")";
+    $("r-disc").textContent = ContractCheck.disclaimer[lang];
+  }
+
+  function reportText() {
+    if (!last) return "";
+    var L = T[lang], rep = last.rep, out = [L.rtitle + " — " + L.kindName[rep.contract_kind] + " — " + rep.clauses_found.length + "/" + rep.clauses_checked + " " + L.checked, ""];
+    if (!rep.findings.length) out.push(L.none);
+    rep.findings.forEach(function (f) {
+      out.push("[" + L[f.severity] + "] [" + (f.kind === "missing" ? L.missing : L.risk) + "] " + (lang === "ar" ? f.title_ar : f.title_en));
+      f.excerpts.forEach(function (x) { out.push("    > " + x); });
+      out.push("    - " + (lang === "ar" ? f.tip_ar : f.tip_en));
+    });
+    out.push("", ContractCheck.disclaimer[lang]);
+    return out.join("\n");
+  }
+
+  function setKind(k) {
+    kind = k;
+    Array.prototype.forEach.call($("kindseg").querySelectorAll("button"), function (b) { b.setAttribute("aria-pressed", b.dataset.kind === k ? "true" : "false"); });
+    if (last) run();
+  }
+
+  function applyLang() {
+    var L = T[lang];
+    document.documentElement.lang = lang; document.documentElement.dir = L.dir; document.title = L.title;
+    $("lang").textContent = L.lang; $("t-title").textContent = L.title; $("t-intro").textContent = L.intro; $("t-disc").textContent = L.disc;
+    $("t-in").textContent = L.input; $("k-sale").textContent = L.sale; $("k-lease").textContent = L.lease; $("t-file").textContent = L.file;
+    $("src").placeholder = L.ph; $("run").textContent = L.run; $("ref").placeholder = L.ref; $("t-privacy").textContent = L.privacy;
+    $("pdf").textContent = L.pdf; $("copy").textContent = L.copy; $("t-foot").textContent = L.foot;
+    var sel = $("sample"); sel.innerHTML = "";
+    var o = el("option", "", L.sample); o.value = ""; sel.appendChild(o);
+    Object.keys(L.samples).forEach(function (k) { var op = el("option", "", L.samples[k]); op.value = k; sel.appendChild(op); });
+    render();
+  }
+
+  function exportPdf() {
+    if (!last) run();
+    if (!last) return;
+    var prev = document.title, ref = $("ref").value.trim().replace(/[\\/:*?"<>|]+/g, "-");
+    document.title = "contract-review" + (ref ? "-" + ref : "");
+    function restore() { document.title = prev; window.removeEventListener("afterprint", restore); }
+    window.addEventListener("afterprint", restore);
+    window.print();
+  }
+
+  function readFile(f) {
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function () { $("src").value = String(r.result); run(); };
+    r.readAsText(f, "utf-8");
+  }
+
+  $("run").addEventListener("click", run);
+  $("kindseg").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) setKind(b.dataset.kind); });
+  $("sample").addEventListener("change", function (e) {
+    var k = e.target.value; if (!k) return;
+    $("src").value = CONTRACT_SAMPLES[k]; setKind(k.indexOf("lease") === 0 ? "lease" : "sale"); run(); e.target.value = "";
+  });
+  $("file").addEventListener("change", function (e) { readFile(e.target.files[0]); e.target.value = ""; });
+  $("lang").addEventListener("click", function () { lang = lang === "en" ? "ar" : "en"; applyLang(); });
+  $("pdf").addEventListener("click", exportPdf);
+  $("ref").addEventListener("input", function () { if (last) render(); });
+  $("copy").addEventListener("click", function () {
+    var b = $("copy");
+    function done() { b.textContent = T[lang].copied; setTimeout(function () { b.textContent = T[lang].copy; }, 1500); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(reportText()).then(done, function () {});
+  });
+  var ta = $("src");
+  ta.addEventListener("dragover", function (e) { e.preventDefault(); ta.classList.add("drag"); });
+  ta.addEventListener("dragleave", function () { ta.classList.remove("drag"); });
+  ta.addEventListener("drop", function (e) { e.preventDefault(); ta.classList.remove("drag"); readFile(e.dataTransfer.files[0]); });
+  applyLang();
+})();
+</script>
+</body>
+</html>
